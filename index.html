@@ -48,6 +48,16 @@ const SUPABASE_URL = "";
 const SUPABASE_ANON_KEY = "";
 let db = null;
 if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+async function loadPublicServices(){
+ if(!db)return;
+ const {data,error}=await db.from('services').select('id,title,description,price,duration_minutes,format').eq('is_active',true).order('created_at',{ascending:true});
+ if(error||!data||!data.length)return;
+ const grid=document.getElementById('serviceGrid');
+ const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ grid.innerHTML=data.map((s,i)=>'<article class="service reveal"><div class="service-icon">'+['↗','◎','▤','◷','＋','▥'][i%6]+'</div><h3>'+escapeHtml(s.title)+'</h3><p>'+escapeHtml(s.description)+'</p><div class="service-foot"><span class="price">'+(s.price===null?'По запросу':new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(s.price)+' ₽')+(s.duration_minutes?' <small>/ '+s.duration_minutes+' мин.</small>':'')+'</span><button data-service="'+escapeHtml(s.title)+'">Выбрать ↗</button></div></article>').join('');
+ grid.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+ grid.querySelectorAll('[data-service]').forEach(b=>b.addEventListener('click',()=>{const select=document.getElementById('service_id');let option=[...select.options].find(o=>o.value===b.dataset.service);if(!option){option=new Option(b.dataset.service,b.dataset.service);select.add(option)}select.value=b.dataset.service;document.getElementById('contacts').scrollIntoView({behavior:'smooth'});}));
+}
 const menu = document.getElementById('menu'), nav = document.getElementById('nav');
 menu.addEventListener('click',()=>nav.classList.toggle('open'));
 nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>nav.classList.remove('open')));
@@ -57,6 +67,7 @@ document.querySelectorAll('[data-plan]').forEach(b=>b.addEventListener('click',(
 const observer = new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
 const dateInput=document.getElementById('preferred_date'); dateInput.min=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+loadPublicServices();
 document.getElementById('bookingForm').addEventListener('submit',async e=>{
  e.preventDefault();const status=document.getElementById('formStatus'),btn=document.getElementById('submitBtn');
  if(!db){status.textContent='Форма пока не подключена к базе данных. Настройте Supabase по инструкции в README — заявка не была отправлена.';return;}
