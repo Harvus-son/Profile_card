@@ -138,6 +138,18 @@ drop policy if exists "admins manage site settings" on public.site_settings;
 create policy "admins manage site settings" on public.site_settings
 for all to authenticated using (public.is_site_admin()) with check (public.is_site_admin());
 
+
+-- Initial editable demo services. Re-running this schema does not overwrite later edits.
+insert into public.services (title, slug, description, price, duration_minutes, format, is_active)
+values
+ ('Персональная тренировка','personal-training','Занятие один на один: техника, нагрузка и упражнения с учётом твоего уровня.',2000,60,'individual',true),
+ ('Онлайн-тренировка','online-training','Дистанционное занятие с обратной связью и рекомендациями по технике.',1500,60,'online',true),
+ ('Индивидуальная программа','individual-program','Структурированный план тренировок под цели и доступное оборудование.',3000,null,'program',true),
+ ('Онлайн-сопровождение','online-support','План, регулярные корректировки и поддержка по согласованному графику.',5000,null,'support',true),
+ ('Консультация','consultation','Обсудим цели, опыт и подберём подходящий формат занятий.',1000,45,'individual',true),
+ ('Пакет тренировок','training-package','Регулярные занятия по плану с возможностью отслеживать прогресс.',null,null,'individual',true)
+on conflict (slug) do nothing;
+
 -- Important: create an auth user first, then insert that user's UUID into admin_users
 -- from the SQL Editor (example below; replace the UUID with the real auth.users.id):
 -- insert into public.admin_users(user_id) values ('YOUR-AUTH-USER-UUID');
